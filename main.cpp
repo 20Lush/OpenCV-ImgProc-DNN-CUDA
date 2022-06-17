@@ -1,43 +1,49 @@
-#include <iostream>
-#include <fstream>
-#include <opencv2/opencv.hpp>
-#include <opencv2/dnn.hpp>
-#include <opencv2/dnn/all_layers.hpp>
+#include "misc-functions.hpp"
 
-using namespace std;
-using namespace cv;
-using namespace dnn;
 
 int main(int, char**) {
 
     string BASE_PATH = "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/";
+    string valorant = "valorant_model/";
+
+    VideoCapture cap = VideoCapture(0);
+
+
     vector<string> CLASS_NAMES;
-    ifstream ifs(string(BASE_PATH + "coco.names").c_str());
+    ifstream ifs(string(BASE_PATH + valorant + "coco-dataset.labels").c_str());
     string line;
 
-    while(getline(ifs, line)){
-        cout << line << endl;
+    while(getline(ifs, line))
         CLASS_NAMES.push_back(line);
-    }
 
-    auto net = readNetFromDarknet(BASE_PATH + "yolov3.cfg", BASE_PATH + "yolov3.weights");
+    auto net = readNetFromDarknet(BASE_PATH + valorant + "yolov4-tiny.cfg", BASE_PATH + valorant + "yolov4-tiny.weights");
 
     net.setPreferableBackend(DNN_BACKEND_CUDA);
     net.setPreferableTarget(DNN_TARGET_CUDA);
 
-    Mat image = imread(BASE_PATH + "horse.jpg");
+    Mat frame;
 
-    Mat blob = blobFromImage(image, 1/255, Size(416,416), true, false);
-    string ln;
-    net.setInput(blob);
-    auto outputs = net.forward(ln);
+    for(;;){
 
+        cap >> frame;
 
-    cout << ln << endl;
+        Mat blob = blobFromImage(frame, 1/255.0, Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(0,0,0), true, false);
 
-    imshow("image", image);
+        net.setInput(blob);
 
-    waitKey(0);
+        vector<Mat> outputs;
+        net.forward(outputs, getOutputNames(net));
+
+        postprocess(frame, outputs, CLASS_NAMES);
+
+        imshow("frame", frame);
+
+        if(waitKey(1) == 'q')
+            break;
+
+    }
+
+    cap.release();
     destroyAllWindows();
     return 0;
 

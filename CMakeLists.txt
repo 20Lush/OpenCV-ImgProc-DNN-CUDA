@@ -6,8 +6,10 @@ enable_testing()
 
 find_package( OpenCV REQUIRED )
 include_directories( &{OpenCV_INCLUDE_DIRS} )
+include_directories( "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test" )
 
 add_executable(opencv-gpu-test main.cpp)
+
 
 target_link_libraries( opencv-gpu-test ${OpenCV_LIBS} )
 
