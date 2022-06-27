@@ -4,8 +4,8 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/dnn/all_layers.hpp>
 
-constexpr float CONFIDENCE_THRESHOLD = 0.6f;
-constexpr float NMS_THRESHOLD = 0.4f;
+constexpr float CONFIDENCE_THRESHOLD = 0.3f;
+constexpr float NMS_THRESHOLD = 0.7f;
 constexpr int INPUT_WIDTH = 416; // in pixels
 constexpr int INPUT_HEIGHT = 416; // in pixels
 
