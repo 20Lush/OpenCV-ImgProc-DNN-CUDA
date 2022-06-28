@@ -3,9 +3,10 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 #include <opencv2/dnn/all_layers.hpp>
+#include <opencv2/cudaimgproc.hpp>
 
-constexpr float CONFIDENCE_THRESHOLD = 0.3f;
-constexpr float NMS_THRESHOLD = 0.7f;
+constexpr float CONFIDENCE_THRESHOLD = 0.4f;
+constexpr float NMS_THRESHOLD = 0.3f;
 constexpr int INPUT_WIDTH = 416; // in pixels
 constexpr int INPUT_HEIGHT = 416; // in pixels
 
@@ -42,17 +43,18 @@ void drawBoundingBox(int classID, float confidence, int left, int top, int right
         label = classes[classID] + ":" + label;
 
     }
+    
     int drawline;
     Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &drawline);
     top = max(top, labelSize.height);
-    rectangle(frame, Point(left,top - round(1.5*labelSize.height)), Point(left+round(1.5*labelSize.width), top+drawline),  Scalar(255,255,255), FILLED);
+    rectangle(frame, Point(left,(int)(top - round(1.5*labelSize.height))), Point((int)(left+round(1.5*labelSize.width)), top+drawline),  Scalar(255,255,255), FILLED);
 
     putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,0), 1);
 
 
 }
 
-void postprocess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes){
+void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes){
 
     vector<int> class_IDs;
     vector<float> confidences;
@@ -98,5 +100,15 @@ void postprocess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes
         Rect box = boxes[idx];
         drawBoundingBox(class_IDs[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
     }
+
+}
+
+Rect getCenterSquare(int screen_width, int screen_height, int length){ //returns a Rect equivalent to the (x,y) & (w,h) coords representing the center of the screen. Use to crop out everything but center.
+
+    int sqr_offset = (int)(length * 0.5); //at center coord, add to (Y) to get opencv rect y coord. subtract from (X) to get opencv rect x coord.
+    int sqr_centerX = (int)(screen_width * 0.5);
+    int sqr_centerY = (int)(screen_height * 0.5);
+    
+    return Rect(sqr_centerX - sqr_offset, sqr_centerY - sqr_offset, length, length);
 
 }
