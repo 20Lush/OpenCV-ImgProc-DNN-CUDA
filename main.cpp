@@ -1,18 +1,17 @@
-#include "misc-functions.hpp"
-
-constexpr int IMG_WIDTH = 2560;
-constexpr int IMG_HEIGHT = 1440;
+#include "Analysis.hpp"
 
 
 int main(int, char**) {
+
+    Analysis analysis;
 
     string BASE_PATH = "C:/";
     string valorant = ".val-weights/";
 
     VideoCapture cap;
     cap.open(0);
-    cap.set(CAP_PROP_FRAME_WIDTH, IMG_WIDTH);
-    cap.set(CAP_PROP_FRAME_HEIGHT, IMG_HEIGHT);
+    cap.set(CAP_PROP_FRAME_WIDTH, analysis.IMG_WIDTH);
+    cap.set(CAP_PROP_FRAME_HEIGHT, analysis.IMG_HEIGHT);
     cap.set(CAP_PROP_FPS, 60);
     cap.set(CAP_PROP_AUTO_EXPOSURE, false);
 
@@ -37,18 +36,18 @@ int main(int, char**) {
         cuda::GpuMat gpu_fullImage;
         gpu_fullImage.upload(frame);
 
-        cuda::GpuMat gpu_croppedImage = gpu_fullImage(getCenterSquare(IMG_WIDTH, IMG_HEIGHT, INPUT_WIDTH)); // more for offsetting system resources than any percieved performance gained. Its cool and I wanted to do it ok
+        cuda::GpuMat gpu_croppedImage = gpu_fullImage(analysis.getCenterSquare(analysis.IMG_WIDTH, analysis.IMG_HEIGHT, analysis.INPUT_WIDTH)); // more for offsetting system resources than any percieved performance gained. Its cool and I wanted to do it ok
         
         Mat croppedImage; 
         gpu_croppedImage.download(croppedImage);
         
-        Mat blob = blobFromImage(croppedImage, 1/255.0, Size(INPUT_WIDTH, INPUT_HEIGHT), Scalar(0,0,0), true, false);
+        Mat blob = blobFromImage(croppedImage, 1/255.0, Size(analysis.INPUT_WIDTH, analysis.INPUT_HEIGHT), Scalar(0,0,0), true, false);
         net.setInput(blob);
 
         vector<Mat> outputs;
-        net.forward(outputs, getOutputNames(net));
+        net.forward(outputs, analysis.getOutputNames(net));
 
-        postProcess(croppedImage, outputs, CLASS_NAMES);
+        analysis.postProcess(croppedImage, outputs, CLASS_NAMES);
 
         imshow("frame", croppedImage);
         
