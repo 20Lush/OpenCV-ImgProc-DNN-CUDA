@@ -1,9 +1,0 @@
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/Experimental.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/Nightly.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/Continuous.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/NightlyMemoryCheck.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/opencv-gpu-test.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/PACKAGE.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/RUN_TESTS.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/build/CMakeFiles/ZERO_CHECK.dir
