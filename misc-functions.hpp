@@ -31,6 +31,16 @@ vector<String> getOutputNames(const Net& net){
     return names;
 }
 
+Rect getCenterSquare(int screen_width, int screen_height, int length){ //returns a Rect equivalent to the (x,y) & (w,h) coords representing the center of the screen. Use to crop out everything but center.
+
+    int sqr_offset = (int)(length * 0.5); //at center coord, add to (Y) to get opencv rect y coord. subtract from (X) to get opencv rect x coord.
+    int sqr_centerX = (int)(screen_width * 0.5);
+    int sqr_centerY = (int)(screen_height * 0.5);
+    
+    return Rect(sqr_centerX - sqr_offset, sqr_centerY - sqr_offset, length, length);
+
+}
+
 void drawBoundingBox(int classID, float confidence, int left, int top, int right, int bottom, Mat& frame, vector<string>& classes){
 
     rectangle(frame, Point(left,top), Point(right, bottom), Scalar(255,178,50), 3);
@@ -52,6 +62,15 @@ void drawBoundingBox(int classID, float confidence, int left, int top, int right
     putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,0), 1);
 
 
+}
+
+Point rectangleCenter(Rect box){ //generic center [might evolve to upper centroid later]
+    return Point( (0.5 * box.width), (0.5 * box.height) ); 
+}
+
+void drawCenterDot(Mat& image, Rect box){
+    Point m_center = rectangleCenter(box);
+    circle(image, rectangleCenter(box), 5, Scalar(50,178,255), FILLED);
 }
 
 void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes){
@@ -99,16 +118,8 @@ void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes
         int idx = indices[i];
         Rect box = boxes[idx];
         drawBoundingBox(class_IDs[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
+        drawCenterDot(frame, box);
     }
 
 }
 
-Rect getCenterSquare(int screen_width, int screen_height, int length){ //returns a Rect equivalent to the (x,y) & (w,h) coords representing the center of the screen. Use to crop out everything but center.
-
-    int sqr_offset = (int)(length * 0.5); //at center coord, add to (Y) to get opencv rect y coord. subtract from (X) to get opencv rect x coord.
-    int sqr_centerX = (int)(screen_width * 0.5);
-    int sqr_centerY = (int)(screen_height * 0.5);
-    
-    return Rect(sqr_centerX - sqr_offset, sqr_centerY - sqr_offset, length, length);
-
-}

@@ -6,8 +6,8 @@ constexpr int IMG_HEIGHT = 1440;
 
 int main(int, char**) {
 
-    string BASE_PATH = "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/";
-    string valorant = "valorant_model/";
+    string BASE_PATH = "C:/";
+    string valorant = ".val-weights/";
 
     VideoCapture cap;
     cap.open(0);
@@ -51,6 +51,7 @@ int main(int, char**) {
         postProcess(croppedImage, outputs, CLASS_NAMES);
 
         imshow("frame", croppedImage);
+        
 
         if(waitKey(1) == 'q')
             break;
