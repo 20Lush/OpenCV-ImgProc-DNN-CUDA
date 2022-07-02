@@ -5,20 +5,24 @@
 #include <opencv2/dnn/all_layers.hpp>
 #include <opencv2/cudaimgproc.hpp>
 
-
-
 using namespace std;
 using namespace cv;
 using namespace dnn;
 
+// 7/1/2022 --------------------------
+// -> need to program the closest-detection algo
+// -----. store the index of the closest detection, run dist as pythagorean theorem btw center and box's center.
+
 class Analysis {
     public:
-        const float CONFIDENCE_THRESHOLD = 0.4f; //should probably have this initialized somewhere else for customizeability
+        const float CONFIDENCE_THRESHOLD = 0.5f; //should probably have this initialized somewhere else for customizeability
         const float NMS_THRESHOLD = 0.3f;
         const int INPUT_WIDTH = 416; // in pixels
         const int INPUT_HEIGHT = 416; // in pixels
         const int IMG_WIDTH = 2560;
         const int IMG_HEIGHT = 1440;
+        int DET_COUNT;
+        Point closest, current;
 
         vector<String> getOutputNames(const Net& net){
             static vector<String> names;
@@ -68,8 +72,8 @@ class Analysis {
                         int centerY = (int)(data_ptr[1] * frame.rows); // detection's y val * frame's row pixel count
                         int width = (int)(data_ptr[2] * frame.cols);  // 
                         int height = (int)(data_ptr[3] * frame.rows); 
-                        int left = centerX - (width * 0.5);
-                        int top = centerY - (height * 0.5);
+                        int left = (int)(centerX - (width * 0.5));
+                        int top = (int)(centerY - (height * 0.5));
 
                         class_IDs.push_back(classIDPoint.x);
                         confidences.push_back((float) confidence);
@@ -90,42 +94,59 @@ class Analysis {
                 Rect box = boxes[idx];
                 drawBoundingBox(class_IDs[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
                 drawCenterDot(frame, box);
+                drawCorrectionVector(frame, box);
+                DET_COUNT++;
             }
 
         }
 
-    private:
+        void drawDetectionCount(Mat& frame){
 
+            String count = to_string(DET_COUNT);
+            int drawline;
+            Size textSize = getTextSize(count, FONT_HERSHEY_SIMPLEX, 0.75, 1, &drawline);
+            //top = max(top, textSize.height);
+            rectangle(frame, Point(0,5), Point((int)(round(1.75*textSize.width)), (int)(round(1.75*textSize.height))),  Scalar(255,255,255), FILLED);
+
+            putText(frame, count, Point(5,25), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,0),1);
+        }
+
+    private:
         void drawBoundingBox(int classID, float confidence, int left, int top, int right, int bottom, Mat& frame, vector<string>& classes){
 
             rectangle(frame, Point(left,top), Point(right, bottom), Scalar(255,178,50), 3);
-
             string label = format("%.2f", confidence);
 
             if(!classes.empty()){
 
                 CV_Assert( classID < (int)classes.size());
                 label = classes[classID] + ":" + label;
-
             }
             
             int drawline;
             Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &drawline);
             top = max(top, labelSize.height);
             rectangle(frame, Point(left,(int)(top - round(1.5*labelSize.height))), Point((int)(left+round(1.5*labelSize.width)), top+drawline),  Scalar(255,255,255), FILLED);
-
             putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,0), 1);
-
-
         }
 
+
+
         Point rectangleCenter(Rect box){ //generic center [might evolve to upper centroid later]
-            return Point( (int)(0.5 * box.width), (int)(0.5 * box.height) ); 
+            return Point( (int)( (box.x + (box.width*0.5)) ), (int)( (box.y + (box.height * 0.5)) ) ); 
         }
 
         void drawCenterDot(Mat& image, Rect box){
             Point m_center = rectangleCenter(box);
             circle(image, rectangleCenter(box), 5, Scalar(50,178,255), FILLED);
+        }
+
+        void drawCorrectionVector(Mat& image, Rect box){
+            Point detection_center = rectangleCenter(box);
+            Point pov_center = ((int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5));
+            line(image, detection_center, pov_center, Scalar(50,178,255));
+            int dx = detection_center.x - pov_center.x; //for reference
+            int dy = detection_center.y - pov_center.y;
         }
 
 };
