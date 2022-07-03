@@ -4,14 +4,13 @@
 int main(int, char**) {
 
     Analysis analysis;
-    
 
-    VideoCapture cap;
+    cv::VideoCapture cap;
     cap.open(0);
-    cap.set(CAP_PROP_FRAME_WIDTH, analysis.IMG_WIDTH); //could definitally find all of these esoteric values through hwnd
-    cap.set(CAP_PROP_FRAME_HEIGHT, analysis.IMG_HEIGHT);
-    cap.set(CAP_PROP_FPS, 60);
-    cap.set(CAP_PROP_AUTO_EXPOSURE, false);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, analysis.IMG_WIDTH); //could definitally find all of these esoteric values through hwnd
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, analysis.IMG_HEIGHT);
+    cap.set(cv::CAP_PROP_FPS, 60);
+    cap.set(cv::CAP_PROP_AUTO_EXPOSURE, false);
 
     string BASE_PATH = "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/"; //need to eventually find a more portable way to do this (user prompt maybe?)
     string valorant = "non_descript_game_model/"; //i hate file systems
@@ -22,42 +21,52 @@ int main(int, char**) {
     while(getline(ifs, line))
         CLASS_NAMES.push_back(line);
 
-    auto net = readNetFromDarknet(BASE_PATH + valorant + "yolov4-tiny.cfg", BASE_PATH + valorant + "yolov4-tiny.weights");
-    net.setPreferableBackend(DNN_BACKEND_CUDA);
-    net.setPreferableTarget(DNN_TARGET_CUDA);
+    auto net = cv::dnn::readNetFromDarknet(BASE_PATH + valorant + "yolov4-tiny.cfg", BASE_PATH + valorant + "yolov4-tiny.weights");
+    net.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+    net.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
 
-    Mat frame;
+    cv::Mat frame;
     for(;;){
 
         cap >> frame;
         analysis.DET_COUNT = 0;
 
-        cuda::GpuMat gpu_fullImage;
+        cv::cuda::GpuMat gpu_fullImage;
         gpu_fullImage.upload(frame);
 
-        cuda::GpuMat gpu_croppedImage = gpu_fullImage(analysis.getCenterSquare(analysis.IMG_WIDTH, analysis.IMG_HEIGHT, analysis.INPUT_WIDTH)); // more for offsetting system resources than any percieved performance gained. Its cool and I wanted to do it ok
+        cv::cuda::GpuMat gpu_croppedImage = gpu_fullImage(analysis.getCenterSquare(analysis.IMG_WIDTH, analysis.IMG_HEIGHT, analysis.INPUT_WIDTH)); // more for offsetting system resources than any percieved performance gained. Its cool and I wanted to do it ok
         
-        Mat croppedImage; 
+        cv::Mat croppedImage; 
         gpu_croppedImage.download(croppedImage);
         
-        Mat blob = blobFromImage(croppedImage, 1/255.0, Size(analysis.INPUT_WIDTH, analysis.INPUT_HEIGHT), Scalar(0,0,0), true, false);
+        cv::Mat blob = blobFromImage(croppedImage, 1/255.0, cv::Size(analysis.INPUT_WIDTH, analysis.INPUT_HEIGHT), cv::Scalar(0,0,0), true, false);
         net.setInput(blob);
 
-        vector<Mat> outputs;
+        vector<cv::Mat> outputs;
         net.forward(outputs, analysis.getOutputNames(net));
 
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES);
-        analysis.drawDetectionCount(croppedImage);
-        imshow("frame", croppedImage);
-        
 
-        if(waitKey(1) == 'q')
+        //instantiate a Rect for which postProcess will transfer the box[closest_idx] to
+        //have a "virtual mouse pointer" that is a little red circle, for which the Point(x,y) will be mutated
+        //take the dx and dy between the fake mouse and the center of the Rect
+        //add the dx and dy to the center coords of the fake mouse circle, with both of those divided by a step value
+        //if there are no detections, return mouse to center
+        //might need some sort of way to dump whatever is in the buffer Rect here that stores the closest box, can be returned from postProcess
+        //or can actually just call on DET_COUNT
+
+        analysis.drawDetectionCount(croppedImage);
+
+
+
+        imshow("frame", croppedImage);
+        if(cv::waitKey(1) == 'q')
             break;
 
     }
 
     cap.release();
-    destroyAllWindows();
+    cv::destroyAllWindows();
     return 0;
 
 }
