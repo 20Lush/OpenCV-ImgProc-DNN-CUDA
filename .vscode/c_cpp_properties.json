@@ -5,7 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:/Users/zachf/opencv/build/install/include",
-                "C:/Users/zachf/opencv/opencv-4.5.2/opencv-4.5.2/include"
+                "C:/Users/zachf/opencv/opencv-4.5.2/opencv-4.5.2/include",
+                "C:/Users/zachf/opencv/opencv-4.5.2/opencv-4.5.2/include",
+                "C:/Users/zachf/opencv/build/install/include"
             ],
             "defines": [
                 "_DEBUG",
