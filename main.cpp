@@ -1,5 +1,9 @@
 #include "Analysis.hpp"
 
+// 7/6/2022 ---------------------
+// -> Serial interfacing
+// -> Get the arduino and exe talking to eachother
+// -> automatic port searching? handshake routine probable
 
 int main(int, char**) {
 
@@ -40,7 +44,7 @@ int main(int, char**) {
     while(getline(ifs, line))
         CLASS_NAMES.push_back(line);
 
-    #pragma region dnn_spinup
+    #pragma region dnn_spinup // dnn resource targeting and net object instantiation
     // +----------------------------------------------------+
 
     auto net = cv::dnn::readNetFromDarknet(BASE_PATH + valorant + "yolov4-tiny.cfg", BASE_PATH + valorant + "yolov4-tiny.weights");
@@ -52,13 +56,14 @@ int main(int, char**) {
     // +----------------------------------------------------+
     #pragma endregion dnn_spinup
 
-    cv::Mat frame;
+    cv::Mat frame; // moving this anywhere else produces catastrophic memory leak when detections are made. leak is observed to bleed into the values of the center Point found in a high prio det box
+                   // i.e leave this the hell alone
     for(;;){
 
         cap >> frame;
         analysis.DET_COUNT = 0;
 
-        #pragma region image_mutation 
+        #pragma region image_mutation // CV cropping through GPU routine. Output is var "croppedImage"
         // +----------------------------------------------------+
 
         cv::cuda::GpuMat gpu_fullImage;
@@ -70,16 +75,16 @@ int main(int, char**) {
         cv::Mat croppedImage; 
 
         gpu_croppedImage.download(croppedImage);
-        
-        cv::Mat blob = blobFromImage(croppedImage, 1/255.0, cv::Size(analysis.INPUT_WIDTH, analysis.INPUT_HEIGHT), cv::Scalar(0,0,0), true, false);
-
-        net.setInput(blob);
 
         // +----------------------------------------------------+
         #pragma endregion image_mutation 
 
-        #pragma region neural_net_impl
+        #pragma region neural_net_impl // blob from croppedImage, outputs are stored in a Mat vector "outputs" 
         // +----------------------------------------------------+
+
+        cv::Mat blob = blobFromImage(croppedImage, 1/255.0, cv::Size(analysis.INPUT_WIDTH, analysis.INPUT_HEIGHT), cv::Scalar(0,0,0), true, false);
+
+        net.setInput(blob);
 
         vector<cv::Mat> outputs;
 
@@ -88,10 +93,9 @@ int main(int, char**) {
         // +----------------------------------------------------+
         #pragma endregion neural_net_impl
 
-        //instantiate a Rect for which postProcess will transfer the box[closest_idx] to
-        Point target; 
-        analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // -> push box[closest_dx] into rect
-        analysis.drawDetectionCount(croppedImage);
+        Point target; // (x,y) off the postProcess' highest priority detection is put here. (0,0) when there are no detections
+        analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
+        analysis.drawDetectionCount(croppedImage); // top left counter
 
         imshow("frame", croppedImage);
 

@@ -5,37 +5,30 @@
 #include <opencv2/dnn/all_layers.hpp>
 #include <opencv2/cudaimgproc.hpp>
 
-using namespace std;
+using namespace std; //yeah 3x namespace, suck me
 using namespace cv;
 using namespace dnn;
 
-
-
 // 7/3/2022 --------------------------
 // -> Clean this up
-
 
 class Analysis {
     public:
         const float CONFIDENCE_THRESHOLD = 0.5f; //should probably have this initialized somewhere else for customizeability
         const float NMS_THRESHOLD = 0.3f;
-        int INPUT_WIDTH = 416;
-        int INPUT_HEIGHT = 416;
-        int IMG_WIDTH = 2560;
-        int IMG_HEIGHT = 1440;
-
+        const int INPUT_WIDTH = 416;
+        const int INPUT_HEIGHT = 416;
+        const int IMG_WIDTH = 2560;
+        const int IMG_HEIGHT = 1440;
         int DET_COUNT, closest_idx; //make sure to always reset DET_COUNT to 0 on every cycle
         Point closest, current;
-        Point center{ (int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5)};
-
-        vector<String> getOutputNames(const Net& net);
+        Point center{ (int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5)}; // debugging value
+        Point getRectCenter(Rect box);
         Rect getCenterSquare(int screen_width, int screen_height, int length);
-        Point rectCenter(Rect box);
+        vector<String> getOutputNames(const Net& net);
 
         void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target);
         void drawDetectionCount(Mat& frame);
-
-
 
     private:
         double findAbsoluteDistanceFromCenter(Point pt);
@@ -117,7 +110,7 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
         int idx = indices[i];
         Rect box = boxes[idx];
 
-        current = rectCenter(box);
+        current = getRectCenter(box);
         if(findAbsoluteDistanceFromCenter(current) < findAbsoluteDistanceFromCenter(closest)){
             closest = current;
             closest_idx = idx; 
@@ -125,11 +118,9 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
 
       
         drawBoundingBox(class_IDs[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
-
         //drawCenterDot(frame, boxes[closest_idx]);
-        drawCorrectionVector(frame, boxes[closest_idx]);
-        
-        
+        //drawCorrectionVector(frame, boxes[closest_idx]);
+        *target = getRectCenter(boxes[closest_idx]); // main fn passback
         DET_COUNT++;
     }
     
@@ -146,7 +137,7 @@ void Analysis::drawDetectionCount(Mat& frame){ //Draws a counter on the top left
     putText(frame, count, Point(5,25), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0,0,0),1);
 }
 
-Point Analysis::rectCenter(Rect box){ //generic center [might evolve to upper centroid later]
+Point Analysis::getRectCenter(Rect box){ //generic center [might evolve to upper centroid later]
     return Point( (int)( (box.x + (box.width*0.5)) ), (int)( (box.y + (box.height * 0.5)) ) ); 
 }
 
@@ -174,10 +165,10 @@ void Analysis::drawBoundingBox(int classID, float confidence, int left, int top,
 }
 
 void Analysis::drawCenterDot(Mat& image, Rect box){
-    circle(image, rectCenter(box), 5, Scalar(50,178,255), FILLED);
+    circle(image, getRectCenter(box), 5, Scalar(50,178,255), FILLED);
 }
 
 void Analysis::drawCorrectionVector(Mat& image, Rect box){
-    Point detection_center = rectCenter(box);
+    Point detection_center = getRectCenter(box);
     line(image, detection_center, center, Scalar(50,178,255));
 }
