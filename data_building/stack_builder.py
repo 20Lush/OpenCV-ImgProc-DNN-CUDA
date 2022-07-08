@@ -1,4 +1,3 @@
-
 # [7/6/2022] A script for gathering data from a 2560x1440p 60fps .mp4 file
 #
 # -> takes input from file
@@ -17,72 +16,85 @@ import cv2 as cv
 
 access_rights = 0o777 # or 0o755 idk
 
-stack_capacity = 1000
-n_ = 8 # n value for skipping. "skip until every nth value"
+stack_capacity = 250
 
+last_frame = 0 # no touch
 
+n_ = 2 # n value for skipping. "skip until every nth value"
+
+skip_chunk = 5 # has to be odd?
 
 def frame_gen(v_path, f_path): # rips frames from provided video path, into provided file path. does not create file path. DOES ITS OWN METADATA CHECK
-
-    cycles = 0
+    
+    global last_frame
+    cycles = last_frame
+    frames = 0
+    skip_count = 0
     if os.path.exists(f_path + "/" + "metadata.txt"):
         with open(f_path + "/" + "metadata.txt") as f:
             for line in f:
-                cycles = int(line.strip('\n'))
+                frames = int(line.strip('\n'))
 
     print('frame_gen f_path: ' + f_path)
-    print('observed cycles: %d' %cycles)
+    print('observed frames: %d' %frames)
 
     cap = cv.VideoCapture(v_path)
+    cap.set(cv.CAP_PROP_POS_FRAMES, last_frame-1)
     success, image = cap.read()
 
     while success: # frame generator
 
         if cycles % n_ == 0: # ok idk how this works but it do be skipping most of the junk
-            cycles += 1
+            skip_count += skip_chunk
+            cycles += skip_chunk
             continue
 
-        cv.imwrite(f_path + "/" + "frame%d.jpg" %(cycles*0.5), image)
+        cv.imwrite(f_path + "/" + "frame%d.jpg" %(frames), image)
         success, image = cap.read()
 
         if success == False:
             print('data exhausted')
 
-        if cycles*0.5 == stack_capacity:
+        if frames == stack_capacity:
             success = False
+            last_frame = cycles
             print("stack complete")
+            print('skip count: %d' %skip_count)
+            print('last_frame: %d' %last_frame)
+            
         else:
             cycles += 1
+            frames += 1
 
     if os.path.exists(f_path + "/" + "metadata.txt"):
         os.remove(f_path + "/" + "metadata.txt")
 
     with open(f_path + "/" + "metadata.txt", 'w') as f:
-        f.write('%d' %(cycles*0.5))
+        f.write('%d' %(frames))
 
 def stack_gen():
 
     stacks = 0 #init global stack counter
     videos = 0 #init global video counter
 
-    if os.path.exists('stack%d' %stacks):
-        curr_stack_path = "stack%d" %stacks
+    if os.path.exists('_stack%d' %stacks):
+        curr_stack_path = "_stack%d" %stacks
     else:
-        os.mkdir('stack%d' %stacks, access_rights)
-        curr_stack_path = "stack%d" %stacks
+        os.mkdir('_stack%d' %stacks, access_rights)
+        curr_stack_path = "_stack%d" %stacks
 
     while os.path.exists('%d.mp4' %videos):
         
-        print('stack_gen stacks: %d' %stacks)
+        print('stack_gen stacks: %d' %(stacks+1))
 
         curr_video_path = '%d.mp4' %videos
-        curr_stack_path = 'stack%d' %stacks
+        curr_stack_path = '_stack%d' %stacks
 
-        if os.path.exists('stack%d' %stacks):
-            curr_stack_path = "stack%d" %stacks
+        if os.path.exists('_stack%d' %stacks):
+            curr_stack_path = "_stack%d" %stacks
         else:
-            os.mkdir('stack%d' %stacks, access_rights)
-            curr_stack_path = "stack%d" %stacks
+            os.mkdir('_stack%d' %stacks, access_rights)
+            curr_stack_path = "_stack%d" %stacks
 
         frame_gen(curr_video_path, curr_stack_path) # deposit frames from selected video to current stack
 
@@ -91,18 +103,16 @@ def stack_gen():
         if os.path.exists(curr_stack_path + "/" + "metadata.txt"):
             with open(curr_stack_path + "/" + "metadata.txt") as f:
                 for line in f:
-                    cycles_check = int(line.strip('\n'))
-                    if cycles_check != stack_capacity:
+                    frames_check = int(line.strip('\n'))
+                    if frames_check != stack_capacity:
                         print('stack incomplete! appending incomplete stack with next video')
                         stacks -= 1 # dont iterate on stack if it isn't complete. frame_gen will automatically append on it and release the stack if the stack reaches max size
                         videos += 1 # however, move to next video
     
     print('no more videos')
 
-
 stack_gen()
     
-
 # print("base path is %s", base_path)
 
 input("Press Enter to continue...")
