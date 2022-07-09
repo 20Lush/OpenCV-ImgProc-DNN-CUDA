@@ -34,7 +34,9 @@ int main(int, char**) {
 
     string valorant = "non_descript_game_model/"; //i hate file systems
 
-    ifstream ifs(string(BASE_PATH + valorant + "coco-dataset.labels").c_str());
+    string aim_lab = "aimlab_model/";
+
+    ifstream ifs(string(BASE_PATH + aim_lab + "coco.names").c_str());
 
     // +----------------------------------------------------+
     #pragma endregion file_pathing
@@ -47,7 +49,7 @@ int main(int, char**) {
     #pragma region dnn_spinup // dnn resource targeting and net object instantiation
     // +----------------------------------------------------+
 
-    auto net = cv::dnn::readNetFromDarknet(BASE_PATH + valorant + "yolov4-tiny.cfg", BASE_PATH + valorant + "yolov4-tiny.weights");
+    auto net = cv::dnn::readNetFromDarknet(BASE_PATH + aim_lab + "custom-yolov4-tiny-detector.cfg", BASE_PATH + aim_lab + "custom-yolov4-tiny-detector_best.weights");
 
     net.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
 
@@ -99,6 +101,8 @@ int main(int, char**) {
 
         imshow("frame", croppedImage);
 
+        if(waitKey(1) == 'q')
+            break;
     }
 
     cap.release();
