@@ -49,7 +49,7 @@ int main(int, char**) {
     #pragma region dnn_spinup // dnn resource targeting and net object instantiation
     // +----------------------------------------------------+
 
-    auto net = cv::dnn::readNetFromDarknet(BASE_PATH + aim_lab + "custom-yolov4-tiny-detector.cfg", BASE_PATH + aim_lab + "custom-yolov4-tiny-detector_best.weights");
+    auto net = cv::dnn::readNetFromDarknet(BASE_PATH + aim_lab + "custom-yolov4-tiny-detector.cfg", BASE_PATH + aim_lab + "custom-yolov4-tiny-detector_final.weights");
 
     net.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
 

@@ -16,20 +16,19 @@ import cv2 as cv
 
 access_rights = 0o777 # or 0o755 idk
 
-stack_capacity = 250
+stack_capacity = 2000
 
 last_frame = 0 # no touch
 
-n_ = 2 # n value for skipping. "skip until every nth value"
+n_ = 100 # n value for skipping. "skip until every nth value"
 
-skip_chunk = 5 # has to be odd?
+skip_chunk = 1 # has to be odd?
 
 def frame_gen(v_path, f_path): # rips frames from provided video path, into provided file path. does not create file path. DOES ITS OWN METADATA CHECK
     
     global last_frame
     cycles = last_frame
     frames = 0
-    skip_count = 0
     if os.path.exists(f_path + "/" + "metadata.txt"):
         with open(f_path + "/" + "metadata.txt") as f:
             for line in f:
@@ -39,38 +38,38 @@ def frame_gen(v_path, f_path): # rips frames from provided video path, into prov
     print('observed frames: %d' %frames)
 
     cap = cv.VideoCapture(v_path)
-    cap.set(cv.CAP_PROP_POS_FRAMES, last_frame-1)
+    #cap.set(cv.CAP_PROP_POS_FRAMES, cycles-1)
     success, image = cap.read()
 
     while success: # frame generator
 
-        if cycles % n_ == 0: # ok idk how this works but it do be skipping most of the junk
-            skip_count += skip_chunk
+        if cycles % n_ != 0: # ok idk how this works but it do be skipping most of the junk
+            #print('skipped')
             cycles += skip_chunk
-            continue
+        elif cycles % n_ == 0:
+            cv.imwrite(f_path + "/" + "frame%d.jpg" %(frames), image)
+            success, image = cap.read()
 
-        cv.imwrite(f_path + "/" + "frame%d.jpg" %(frames), image)
-        success, image = cap.read()
+            if success == False:
+                print('data exhausted')
 
-        if success == False:
-            print('data exhausted')
-
-        if frames == stack_capacity:
-            success = False
-            last_frame = cycles
-            print("stack complete")
-            print('skip count: %d' %skip_count)
-            print('last_frame: %d' %last_frame)
+            if frames == stack_capacity:
+                success = False
+                last_frame = cycles
+                print("stack complete")
+                print('last_frame: %d' %last_frame)
             
-        else:
-            cycles += 1
-            frames += 1
+            else:
+                frames += 1
+                cycles += 1
 
     if os.path.exists(f_path + "/" + "metadata.txt"):
         os.remove(f_path + "/" + "metadata.txt")
 
     with open(f_path + "/" + "metadata.txt", 'w') as f:
-        f.write('%d' %(frames))
+        f.write('%d' %cycles)
+
+    print('frames: %d' %frames)
 
 def stack_gen():
 
@@ -104,10 +103,13 @@ def stack_gen():
             with open(curr_stack_path + "/" + "metadata.txt") as f:
                 for line in f:
                     frames_check = int(line.strip('\n'))
-                    if frames_check != stack_capacity:
-                        print('stack incomplete! appending incomplete stack with next video')
-                        stacks -= 1 # dont iterate on stack if it isn't complete. frame_gen will automatically append on it and release the stack if the stack reaches max size
-                        videos += 1 # however, move to next video
+
+        if frames_check != stack_capacity:
+            print('stack incomplete! appending incomplete stack with next video')
+            print('frame check: %d' %frames_check)
+            stacks -= 1 # dont iterate on stack if it isn't complete. frame_gen will automatically append on it and release the stack if the stack reaches max size
+            videos += 1
+            continue
     
     print('no more videos')
 
