@@ -1,3 +1,6 @@
+#include <Windows.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <opencv2/opencv.hpp>
@@ -21,22 +24,23 @@ class Analysis {
         const int IMG_WIDTH = 2560;
         const int IMG_HEIGHT = 1440;
         int DET_COUNT, closest_idx; //make sure to always reset DET_COUNT to 0 on every cycle
-        Point closest, current;
+        Point2f closest, current;
         Point center{ (int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5)}; // debugging value
         Point getRectCenter(Rect box);
+        Point2f getRectCenterFloat(Rect box);
         Rect getCenterSquare(int screen_width, int screen_height, int length);
         vector<String> getOutputNames(const Net& net);
 
         void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target);
         void drawDetectionCount(Mat& frame);
+        void drawCorrectionVector(Mat& image, Point det);
 
     private:
-        double findAbsoluteDistanceFromCenter(Point pt);
+        float findAbsoluteDistanceFromCenter(Point2f pt);
         
         void drawBoundingBox(int classID, float confidence, int left, int top, int right, int bottom, Mat& frame, vector<string>& classes);
         void drawCenterDot(Mat& image, Rect box);
-        void drawCorrectionVector(Mat& image, Rect box);
-
+        
 };
 
 vector<String> Analysis::getOutputNames(const Net& net){
@@ -103,26 +107,27 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
     vector<int> indices;
     NMSBoxes(boxes, confidences, CONFIDENCE_THRESHOLD, NMS_THRESHOLD, indices); //suppress non-max conf value bounding boxes and eliminate overlapping boxes
 
-    closest = center; //center of FOV
-
     // iter through the detections and do what you need to do to them. current det index is idx
     for(size_t i = 0; i < indices.size(); i++){
+
         int idx = indices[i];
         Rect box = boxes[idx];
-
         current = getRectCenter(box);
-        if(findAbsoluteDistanceFromCenter(current) < findAbsoluteDistanceFromCenter(closest)){
+
+        if(i == 0){
             closest = current;
+        }
+        else if(findAbsoluteDistanceFromCenter(current) < findAbsoluteDistanceFromCenter(closest)){
+            closest = current; 
             closest_idx = idx; 
         }
 
-      
-        drawBoundingBox(class_IDs[idx], confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
-        //drawCenterDot(frame, boxes[closest_idx]);
-        //drawCorrectionVector(frame, boxes[closest_idx]);
-        *target = getRectCenter(boxes[closest_idx]); // main fn passback
+        drawBoundingBox(class_IDs[idx], findAbsoluteDistanceFromCenter(current), box.x, box.y, box.x + box.width, box.y + box.height, frame, classes);
         DET_COUNT++;
     }
+
+    drawCorrectionVector(frame, closest); // I FINALLY FIGURED IT OUT. ITS FIXED YAAAAAAAAAAA
+    *target = closest;
     
 }
 
@@ -141,8 +146,12 @@ Point Analysis::getRectCenter(Rect box){ //generic center [might evolve to upper
     return Point( (int)( (box.x + (box.width*0.5)) ), (int)( (box.y + (box.height * 0.5)) ) ); 
 }
 
-double Analysis::findAbsoluteDistanceFromCenter(Point pt){ //find the absolute distance from pt1 to pt2
-    return double(sqrt( pow((pt.x - center.x),2) + pow((pt.y - center.y),2) ));
+Point2f Analysis::getRectCenterFloat(Rect box){ //generic center [might evolve to upper centroid later]
+    return Point2f((float)(box.x + (box.width*0.5)), (float)((box.y + (box.height * 0.5))) ); 
+}
+
+float Analysis::findAbsoluteDistanceFromCenter(Point2f pt){ //find the absolute distance from pt1 to pt2
+    return float(sqrt( pow((pt.x - center.x),2) + pow((pt.y - center.y),2) ));
 }
 
 void Analysis::drawBoundingBox(int classID, float confidence, int left, int top, int right, int bottom, Mat& frame, vector<string>& classes){
@@ -168,7 +177,6 @@ void Analysis::drawCenterDot(Mat& image, Rect box){
     circle(image, getRectCenter(box), 5, Scalar(50,178,255), FILLED);
 }
 
-void Analysis::drawCorrectionVector(Mat& image, Rect box){
-    Point detection_center = getRectCenter(box);
-    line(image, detection_center, center, Scalar(50,178,255));
+void Analysis::drawCorrectionVector(Mat& image, Point det){
+    line(image, det, center, Scalar(50,178,255));
 }

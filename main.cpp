@@ -9,6 +9,8 @@ int main(int, char**) {
 
     Analysis analysis;
 
+    #pragma region video_cap_and_NN
+    // +===============================================================================+
     #pragma region video_capture_with_properties // cv::VideoCapture setup. [] OBJ: "cap" []
     // +----------------------------------------------------+
 
@@ -41,12 +43,15 @@ int main(int, char**) {
     // +----------------------------------------------------+
     #pragma endregion file_pathing
 
+    #pragma region class_name_pull
     vector<string> CLASS_NAMES;
     string line;
     while(getline(ifs, line))
         CLASS_NAMES.push_back(line);
+    #pragma endregion class_name_pull
 
     #pragma region dnn_spinup // dnn resource targeting and net object instantiation
+    
     // +----------------------------------------------------+
 
     auto net = cv::dnn::readNetFromDarknet(BASE_PATH + aim_lab + "custom-yolov4-tiny-detector.cfg", BASE_PATH + aim_lab + "custom-yolov4-tiny-detector_final.weights");
@@ -57,6 +62,29 @@ int main(int, char**) {
 
     // +----------------------------------------------------+
     #pragma endregion dnn_spinup
+    // +===============================================================================+
+    #pragma endregion video_cap_and_NN
+    
+    #pragma region arduino_serial_setup
+    
+    wstring SerialPort = L"COM8";
+
+    HANDLE hSerial = CreateFileW(SerialPort.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hSerial == INVALID_HANDLE_VALUE)
+        cout << "Error opening serial port. Check no other device is accessing the port!" << endl;
+    
+    DCB dcbSerialParams = { 0 };
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+    GetCommState(hSerial, &dcbSerialParams);
+
+    dcbSerialParams.BaudRate = CBR_115200;
+    dcbSerialParams.ByteSize = 8;
+    dcbSerialParams.StopBits = ONESTOPBIT;
+    dcbSerialParams.Parity = NOPARITY;
+
+    SetCommState(hSerial, &dcbSerialParams);
+
+    #pragma endregion arduino_serial_setup
 
     cv::Mat frame; // moving this anywhere else produces catastrophic memory leak when detections are made. leak is observed to bleed into the values of the center Point found in a high prio det box
                    // i.e leave this the hell alone
@@ -98,6 +126,10 @@ int main(int, char**) {
         Point target; // (x,y) off the postProcess' highest priority detection is put here. (0,0) when there are no detections
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
+   
+        //analysis.drawCorrectionVector(croppedImage, target);
+        //WriteFile(hSerial, &target.x, sizeof(target.x), NULL, NULL);
+        cout << target << endl;
 
         imshow("frame", croppedImage);
 
