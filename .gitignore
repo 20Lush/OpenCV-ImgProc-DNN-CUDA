@@ -1,5 +1,3 @@
-/.vscode/
 /build/ 
 /CMakeLists.txt
 /models/
-/opencv-gpu-test.code-workspace/

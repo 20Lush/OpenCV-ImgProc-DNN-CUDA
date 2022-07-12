@@ -2,10 +2,9 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include <string>
-
-
-
+#include <vector>
 
 const int ARDUINO_WAIT_TIME = 2000;
 
@@ -14,50 +13,52 @@ const int ARDUINO_WAIT_TIME = 2000;
 
 class WindowsSerial
 {
-public:
-	////////////////////////////////////////////////////////
-	// Default Constructor
-	WindowsSerial(unsigned int _comPortNum);
+	public:
+		////////////////////////////////////////////////////////
+		// Default Constructor
+		WindowsSerial(unsigned int _comPortNum);
 
-	////////////////////////////////////////////////////////
-	// Initialization/Admin Stuff
-	void setPort(unsigned int _comPortNum);
-	void begin(unsigned int _baud);
-	void begin(unsigned int _baud, unsigned int _comPortNum);
-	bool connected();
-	void end();
+		////////////////////////////////////////////////////////
+		// Initialization/Admin Stuff
+		void setPort(unsigned int _comPortNum);
+		void begin(unsigned int _baud);
+		void begin(unsigned int _baud, unsigned int _comPortNum);
+		bool connected();
+		void end();
 
-	////////////////////////////////////////////////////////
-	// Random Stuff
-	unsigned int available();
-	operator bool();
+		////////////////////////////////////////////////////////
+		// Random Stuff
+		unsigned int available();
+		operator bool();
 
-	////////////////////////////////////////////////////////
-	// I/O Functions
-	int read();
-	int read(char buffer[], unsigned int bufSize);
+		////////////////////////////////////////////////////////
+		// I/O Functions
+		int read();
+		int read(char buffer[], unsigned int bufSize);
 
-	bool print(const std::string message);
-	bool print(const long double message);
-	bool print(const long message);
+		bool print(const std::string message);
+		bool print(const long double message);
+		bool print(const long message);
 
-	bool println(const std::string message);
-	bool println(const long double message);
-	bool println(const long message);
+		bool println(const std::string message);
+		bool println(const long double message);
+		bool println(const long message);
 
-	bool write(char c);
-	bool write(const char buffer[], unsigned int bufSize);
+		bool write(char c);
+		bool write(const char buffer[], unsigned int bufSize);
 
-private:
-	HANDLE handler;
-	bool isConnected;
-	COMSTAT status;
-	DWORD errors;
-	
-	unsigned int baud = CBR_9600;
-	unsigned int comPortNum = NULL;
+		WindowsSerial port_from_index(int i);
 
-	void initializePort(char portName[], unsigned int _baud);
+	private:
+		HANDLE handler;
+		bool isConnected;
+		COMSTAT status;
+		DWORD errors;
+		
+		unsigned int baud = CBR_9600;
+		unsigned int comPortNum = NULL;
+
+		void initializePort(char portName[], unsigned int _baud);
 };
 
 

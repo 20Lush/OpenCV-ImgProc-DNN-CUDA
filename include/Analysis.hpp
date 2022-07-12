@@ -128,9 +128,7 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
 
     if(DET_COUNT == 0) *target = {-1,-1}; // create and edge case where if there are no detections, returns unique {-1,-1} flag
     else drawCorrectionVector(frame, closest); // I FINALLY FIGURED IT OUT. ITS FIXED YAAAAAAAAAAA
-    Point delta = {abs((int)(closest.x - center.x)), abs((int)(closest.y - center.y))};
-    cout << delta << "\r" << flush;
-    *target = delta;
+    *target = closest;
     
 }
 

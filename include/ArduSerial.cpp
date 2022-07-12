@@ -381,3 +381,87 @@ WindowsSerial Serial27(27);
 WindowsSerial Serial28(28);
 WindowsSerial Serial29(29);
 WindowsSerial Serial30(30);
+
+
+std::vector<WindowsSerial*> s_Ports = { // addresses of the actual serial objects that are correlated with the windows routine
+
+	&Serial,
+	&Serial1,
+	&Serial2,
+	&Serial3,
+	&Serial4,
+	&Serial5,
+	&Serial6,
+	&Serial7,
+	&Serial8,
+	&Serial9,
+	&Serial10,
+	&Serial11,
+	&Serial12,
+	&Serial13, 
+	&Serial14,
+	&Serial15,
+	&Serial16,
+	&Serial17,
+	&Serial18,
+	&Serial19,
+	&Serial20,
+	&Serial21,
+	&Serial22,
+	&Serial23,
+	&Serial24,
+	&Serial25,
+	&Serial26,
+	&Serial27,
+	&Serial28,
+	&Serial29,
+	&Serial30,
+
+};
+
+void serialSetup(WindowsSerial* SerialPointer)
+{
+	(*SerialPointer).begin(115200);
+
+	std::cout << "Starting..." << std::endl;
+
+	while (! (*SerialPointer));
+
+	while ((*SerialPointer).available())
+		(*SerialPointer).read();
+
+	std::cout << "Connected" << std::endl;
+}
+
+void serialHandshake(WindowsSerial* SerialPointer)
+{
+	String Data = "0:0";
+
+	std::cout << "Sending data: " << Data << std::endl;
+	(*SerialPointer).println(Data);
+
+	std::cout << "Looking for reply..." << std::endl;
+	while ((*SerialPointer).available() < Data.length());
+
+	std::cout << "Found the following reply:" << std::endl;
+	while ((*SerialPointer).available())
+		printf("%c", (*SerialPointer).read());
+
+	std::cout << std::endl << "Handshake complete!" << std::endl;
+}
+
+void serialEchoFast(WindowsSerial* SerialPointer, std::string Data){
+
+	(*SerialPointer).println(Data);
+	while ((*SerialPointer).available() < Data.length());
+
+	while ((*SerialPointer).available())
+		printf("%c", (*SerialPointer).read());
+
+}
+
+void serialSend(WindowsSerial* SerialPointer, std::string Data){
+
+	(*SerialPointer).println(Data);
+
+}

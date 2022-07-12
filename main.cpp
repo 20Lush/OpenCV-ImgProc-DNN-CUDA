@@ -1,17 +1,6 @@
 #include "Analysis.hpp"
-#include "ArduSerial.h"
+#include "ArduSerial.cpp"
 
-// 7/6/2022 ---------------------
-// -> Serial interfacingq
-// -> Get the arduino and exe talking to eachother
-// -> automatic port searching? handshake routine probable
-
-void send_packet(int x, int y, HANDLE handle){
-
-    String str = to_string(x) + ":" + to_string(y);
-    WriteFile(handle, &str, sizeof(str), NULL, NULL);
-
-}
 
 int main(int, char**) {
 
@@ -40,7 +29,7 @@ int main(int, char**) {
     #pragma region file_pathing // file paths stored as strings. 
     // +----------------------------------------------------+
 
-    string BASE_PATH = "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/"; //need to eventually find a more portable way to do this (user prompt maybe?)
+    string BASE_PATH = "C:/Users/zachf/Documents/.Computer Vision/opencv-gpu-test/models/"; //need to eventually find a more portable way to do this (user prompt maybe?)
 
     string valorant = "non_descript_game_model/"; //i hate file systems
 
@@ -75,28 +64,16 @@ int main(int, char**) {
     
     #pragma region arduino_serial_setup
 
-    
-    
-    // wstring SerialPort = L"COM8";
+    int port_num = 8; // can be automated
 
-    // HANDLE hSerial = CreateFileW(SerialPort.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    // if(hSerial == INVALID_HANDLE_VALUE)
-    //     cout << "Error opening serial port. Check no other device is accessing the port!" << endl;
-    
-    // DCB dcbSerialParams = { 0 };
-    // dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-    // GetCommState(hSerial, &dcbSerialParams);
-
-    // dcbSerialParams.BaudRate = CBR_115200;
-    // dcbSerialParams.ByteSize = 8;
-    // dcbSerialParams.StopBits = ONESTOPBIT;
-    // dcbSerialParams.Parity = NOPARITY;
-
-    // SetCommState(hSerial, &dcbSerialParams);
+    WindowsSerial* port_ptr = s_Ports[port_num];
+    serialSetup(port_ptr);
+    //serialHandshake(port_ptr);
 
     #pragma endregion arduino_serial_setup
 
     Point target; // (x,y) off the postProcess' highest priority detection is put here. (-1,-1) when there are no detections
+    string packet;
     cv::Mat frame; // moving this anywhere else produces catastrophic memory leak when detections are made. leak is observed to bleed into the values of the center Point found in a high prio det box
                    // i.e leave this the hell alone
 
@@ -137,11 +114,13 @@ int main(int, char**) {
 
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
-        
+
+        packet = to_string(target.x) + ':' + to_string(target.y);
+        serialSend(port_ptr, packet);
+
         imshow("frame", croppedImage);
 
         if(waitKey(1) == 'q'){
-            //send_packet(-2, -2, hSerial); // destroy serial connection
             break;
         }
     }
