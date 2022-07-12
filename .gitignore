@@ -1,5 +1,5 @@
+/.vscode/
 /build/ 
-/non_descript_game_model/
 /CMakeLists.txt
-/coco_model/
-/aimlab_model/
+/models/
+/opencv-gpu-test.code-workspace/

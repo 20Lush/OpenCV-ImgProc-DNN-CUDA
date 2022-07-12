@@ -1,9 +1,17 @@
 #include "Analysis.hpp"
+#include "ArduSerial.h"
 
 // 7/6/2022 ---------------------
-// -> Serial interfacing
+// -> Serial interfacingq
 // -> Get the arduino and exe talking to eachother
 // -> automatic port searching? handshake routine probable
+
+void send_packet(int x, int y, HANDLE handle){
+
+    String str = to_string(x) + ":" + to_string(y);
+    WriteFile(handle, &str, sizeof(str), NULL, NULL);
+
+}
 
 int main(int, char**) {
 
@@ -66,28 +74,32 @@ int main(int, char**) {
     #pragma endregion video_cap_and_NN
     
     #pragma region arduino_serial_setup
+
     
-    wstring SerialPort = L"COM8";
-
-    HANDLE hSerial = CreateFileW(SerialPort.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if(hSerial == INVALID_HANDLE_VALUE)
-        cout << "Error opening serial port. Check no other device is accessing the port!" << endl;
     
-    DCB dcbSerialParams = { 0 };
-    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-    GetCommState(hSerial, &dcbSerialParams);
+    // wstring SerialPort = L"COM8";
 
-    dcbSerialParams.BaudRate = CBR_115200;
-    dcbSerialParams.ByteSize = 8;
-    dcbSerialParams.StopBits = ONESTOPBIT;
-    dcbSerialParams.Parity = NOPARITY;
+    // HANDLE hSerial = CreateFileW(SerialPort.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    // if(hSerial == INVALID_HANDLE_VALUE)
+    //     cout << "Error opening serial port. Check no other device is accessing the port!" << endl;
+    
+    // DCB dcbSerialParams = { 0 };
+    // dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+    // GetCommState(hSerial, &dcbSerialParams);
 
-    SetCommState(hSerial, &dcbSerialParams);
+    // dcbSerialParams.BaudRate = CBR_115200;
+    // dcbSerialParams.ByteSize = 8;
+    // dcbSerialParams.StopBits = ONESTOPBIT;
+    // dcbSerialParams.Parity = NOPARITY;
+
+    // SetCommState(hSerial, &dcbSerialParams);
 
     #pragma endregion arduino_serial_setup
 
+    Point target; // (x,y) off the postProcess' highest priority detection is put here. (-1,-1) when there are no detections
     cv::Mat frame; // moving this anywhere else produces catastrophic memory leak when detections are made. leak is observed to bleed into the values of the center Point found in a high prio det box
                    // i.e leave this the hell alone
+
     for(;;){
 
         cap >> frame;
@@ -123,18 +135,15 @@ int main(int, char**) {
         // +----------------------------------------------------+
         #pragma endregion neural_net_impl
 
-        Point target; // (x,y) off the postProcess' highest priority detection is put here. (0,0) when there are no detections
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
-   
-        //analysis.drawCorrectionVector(croppedImage, target);
-        //WriteFile(hSerial, &target.x, sizeof(target.x), NULL, NULL);
-        cout << target << endl;
-
+        
         imshow("frame", croppedImage);
 
-        if(waitKey(1) == 'q')
+        if(waitKey(1) == 'q'){
+            //send_packet(-2, -2, hSerial); // destroy serial connection
             break;
+        }
     }
 
     cap.release();
