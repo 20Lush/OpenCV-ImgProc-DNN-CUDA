@@ -23,8 +23,9 @@ class Analysis {
         const int INPUT_HEIGHT = 416;
         const int IMG_WIDTH = 2560;
         const int IMG_HEIGHT = 1440;
+        const int DIST_THRESHOLD = 33;
         int DET_COUNT, closest_idx; //make sure to always reset DET_COUNT to 0 on every cycle
-        Point2f closest, current;
+        Point closest, current;
         Point center{ (int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5)}; // debugging value
         Point getRectCenter(Rect box);
         Point2f getRectCenterFloat(Rect box);
@@ -126,9 +127,17 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
         DET_COUNT++;
     }
 
-    if(DET_COUNT == 0) *target = {-1,-1}; // create and edge case where if there are no detections, returns unique {-1,-1} flag
-    else drawCorrectionVector(frame, closest); // I FINALLY FIGURED IT OUT. ITS FIXED YAAAAAAAAAAA
-    *target = closest;
+    if(DET_COUNT == 0) *target = {-417,-417}; // create and edge case where if there are no detections, returns unique falg
+
+    #if THRESHOLD_FLAG
+    else if(findAbsoluteDistanceFromCenter(closest) < DIST_THRESHOLD) *target = {-418,-418};
+    #endif
+
+    else {
+        drawCorrectionVector(frame, closest);
+        Point planar_shift = {closest.x - center.x, closest.y - center.y};
+        *target = planar_shift;
+    }
     
 }
 
@@ -145,10 +154,6 @@ void Analysis::drawDetectionCount(Mat& frame){ //Draws a counter on the top left
 
 Point Analysis::getRectCenter(Rect box){ //generic center [might evolve to upper centroid later]
     return Point( (int)( (box.x + (box.width*0.5)) ), (int)( (box.y + (box.height * 0.5)) ) ); 
-}
-
-Point2f Analysis::getRectCenterFloat(Rect box){ //generic center [might evolve to upper centroid later]
-    return Point2f((float)(box.x + (box.width*0.5)), (float)((box.y + (box.height * 0.5))) ); 
 }
 
 float Analysis::findAbsoluteDistanceFromCenter(Point2f pt){ //find the absolute distance from pt1 to pt2

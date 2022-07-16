@@ -1,12 +1,14 @@
-#include "Analysis.hpp"
+#include <config.h>
+#include <Analysis.hpp>
 #include "ArduSerial.cpp"
+
 
 
 int main(int, char**) {
 
     Analysis analysis;
 
-    #pragma region video_cap_and_NN
+    #pragma region video_cap_and_NN // a lot of stuff in here
     // +===============================================================================+
     #pragma region video_capture_with_properties // cv::VideoCapture setup. [] OBJ: "cap" []
     // +----------------------------------------------------+
@@ -82,7 +84,7 @@ int main(int, char**) {
         cap >> frame;
         analysis.DET_COUNT = 0;
 
-        #pragma region image_mutation // CV cropping through GPU routine. Output is var "croppedImage"
+        #pragma region image_mutation // CV croppin22g through GPU routine. Output is var "croppedImage"
         // +----------------------------------------------------+
 
         cv::cuda::GpuMat gpu_fullImage;
@@ -115,14 +117,30 @@ int main(int, char**) {
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
 
-        packet = to_string(target.x) + ':' + to_string(target.y);
-        serialSend(port_ptr, packet);
+        #ifndef OUTPUT_DEBUG_MODE
+
+        if(target != Point(-417,-417)){
+            packet = to_string(target.x) + ':' + to_string(target.y);
+            serialSend(port_ptr, packet);
+        }
+
+        #else
+
+        if(target != Point(-417,-417)){
+            packet = to_string(target.x) + ':' + to_string(target.y);
+            serialEchoFast(port_ptr, packet);
+        }
 
         imshow("frame", croppedImage);
 
         if(waitKey(1) == 'q'){
             break;
         }
+
+        #endif
+
+
+
     }
 
     cap.release();
