@@ -117,16 +117,16 @@ int main(int, char**) {
         analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
 
-        #ifndef OUTPUT_DEBUG_MODE
+        #if OUTPUT_HEADLESS_MODE
 
-        if(target != Point(-417,-417)){
+        if(target != Point(0,0)){
             packet = to_string(target.x) + ':' + to_string(target.y);
             serialSend(port_ptr, packet);
         }
 
         #else
 
-        if(target != Point(-417,-417)){
+        if(target != Point(0,0)){
             packet = to_string(target.x) + ':' + to_string(target.y);
             serialEchoFast(port_ptr, packet);
         }

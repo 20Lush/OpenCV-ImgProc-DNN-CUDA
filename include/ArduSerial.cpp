@@ -435,7 +435,7 @@ void serialSetup(WindowsSerial* SerialPointer)
 
 void serialHandshake(WindowsSerial* SerialPointer)
 {
-	String Data = "0:0";
+	std::string Data = "0:0";
 
 	std::cout << "Sending data: " << Data << std::endl;
 	(*SerialPointer).println(Data);
@@ -450,13 +450,15 @@ void serialHandshake(WindowsSerial* SerialPointer)
 	std::cout << std::endl << "Handshake complete!" << std::endl;
 }
 
-void serialEchoFast(WindowsSerial* SerialPointer, std::string Data){
+void serialEchoFast(WindowsSerial* SerialPointer, std::string Data, std::string debug = "\n"){
 
 	(*SerialPointer).println(Data);
 	while ((*SerialPointer).available() < Data.length());
 
 	while ((*SerialPointer).available())
 		printf("%c", (*SerialPointer).read());
+
+	//std::cout << " host side: " << debug << std::endl;
 
 }
 

@@ -23,7 +23,7 @@ class Analysis {
         const int INPUT_HEIGHT = 416;
         const int IMG_WIDTH = 2560;
         const int IMG_HEIGHT = 1440;
-        const int DIST_THRESHOLD = 33;
+        const int DIST_THRESHOLD = 10;
         int DET_COUNT, closest_idx; //make sure to always reset DET_COUNT to 0 on every cycle
         Point closest, current;
         Point center{ (int)(INPUT_WIDTH*0.5), (int)(INPUT_HEIGHT*0.5)}; // debugging value
@@ -127,16 +127,11 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
         DET_COUNT++;
     }
 
-    if(DET_COUNT == 0) *target = {-417,-417}; // create and edge case where if there are no detections, returns unique falg
-
-    #if THRESHOLD_FLAG
-    else if(findAbsoluteDistanceFromCenter(closest) < DIST_THRESHOLD) *target = {-418,-418};
-    #endif
-
+    if(DET_COUNT == 0) *target = {0,0}; // create and edge case where if there are no detections, returns unique falg
+    else if(findAbsoluteDistanceFromCenter(closest) < THRESHOLD_FLAG) *target = {0,0};
     else {
         drawCorrectionVector(frame, closest);
-        Point planar_shift = {closest.x - center.x, closest.y - center.y};
-        *target = planar_shift;
+        *target = Point(closest.x - 208, closest.y - 208);
     }
     
 }
