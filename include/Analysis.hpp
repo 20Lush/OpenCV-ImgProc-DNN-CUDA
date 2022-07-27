@@ -32,7 +32,7 @@ class Analysis {
         Rect getCenterSquare(int screen_width, int screen_height, int length);
         vector<String> getOutputNames(const Net& net);
 
-        void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target);
+        void postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target, float* dist);
         void drawDetectionCount(Mat& frame);
         void drawCorrectionVector(Mat& image, Point det);
 
@@ -68,7 +68,7 @@ Rect Analysis::getCenterSquare(int screen_width, int screen_height, int length){
 
 }
 
-void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target){
+void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string>& classes, Point* target, float_t* dist){
 
     vector<int> class_IDs;
     vector<float> confidences;
@@ -128,9 +128,9 @@ void Analysis::postProcess(Mat& frame, const vector<Mat>& outputs, vector<string
     }
 
     if(DET_COUNT == 0) *target = {0,0}; // create and edge case where if there are no detections, returns unique falg
-    else if(findAbsoluteDistanceFromCenter(closest) < THRESHOLD_FLAG) *target = {0,0};
     else {
         drawCorrectionVector(frame, closest);
+        *dist = findAbsoluteDistanceFromCenter(closest);
         *target = Point(closest.x - 208, closest.y - 208);
     }
     

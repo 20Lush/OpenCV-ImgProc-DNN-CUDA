@@ -2,7 +2,7 @@
 #include <Analysis.hpp>
 #include "ArduSerial.cpp"
 
-
+int dx=0, dy=0, x_last=0, y_last=0;
 
 int main(int, char**) {
 
@@ -70,11 +70,11 @@ int main(int, char**) {
 
     WindowsSerial* port_ptr = s_Ports[port_num];
     serialSetup(port_ptr);
-    //serialHandshake(port_ptr);
 
     #pragma endregion arduino_serial_setup
 
     Point target; // (x,y) off the postProcess' highest priority detection is put here. (-1,-1) when there are no detections
+    float dist;
     string packet;
     cv::Mat frame; // moving this anywhere else produces catastrophic memory leak when detections are made. leak is observed to bleed into the values of the center Point found in a high prio det box
                    // i.e leave this the hell alone
@@ -114,22 +114,20 @@ int main(int, char**) {
         // +----------------------------------------------------+
         #pragma endregion neural_net_impl
 
-        analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target); // has box drawing embedded into it
+        analysis.postProcess(croppedImage, outputs, CLASS_NAMES, &target, &dist); // has box drawing embedded into it
         analysis.drawDetectionCount(croppedImage); // top left counter
 
         #if OUTPUT_HEADLESS_MODE
 
-        if(target != Point(0,0)){
+        if(dist < 100){
             packet = to_string(target.x) + ':' + to_string(target.y);
             serialSend(port_ptr, packet);
         }
-
+        
         #else
 
-        if(target != Point(0,0)){
-            packet = to_string(target.x) + ':' + to_string(target.y);
-            serialEchoFast(port_ptr, packet);
-        }
+        packet = to_string(target.x) + ':' + to_string(target.y);
+        serialEchoFast(port_ptr, packet);
 
         imshow("frame", croppedImage);
 
